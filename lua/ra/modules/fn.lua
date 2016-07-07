@@ -1,5 +1,3 @@
-if SERVER then AddCSLuaFile() end
-
 local xfn = {}
 
 function xfn.noop() end local noop = xfn.noop
@@ -46,13 +44,6 @@ function xfn.zip(...)
 	return list
 end
 
-function xfn.value(value)
-	return function()
-		return value
-	end
-end
-
-
 function xfn.deafen( func )
 	return function() func() end
 end
@@ -64,9 +55,8 @@ function xfn.neuter( func )
 	end
 end
 
-
 -- 
--- CURRYING
+-- CURRYING AND STACK MANIPULATION
 --
 local function memoize(fn)
 	return setmetatable({}, {
@@ -115,10 +105,27 @@ end
 
 function xfn.mergeStacks(...)
 	local stack = xfn.storeArgs(...)
-	return function(...)
-		return stack(...)
-	end
+	return stack
 end
+
+--
+-- FUNCTIONAL UTILITIES
+--
+
+-- returns fn returns arg == value
+function xfn.add(a, b)
+	return a + b
+end
+function xfn.mult(a, b)
+	return a * b
+end
+function xfn.sub(a, b)
+	return a - b
+end
+function xfn.div(a, b)
+	return a / b
+end
+function xfn.collapse(a) return a end
 
 
 return xfn

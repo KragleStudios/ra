@@ -16,10 +16,11 @@ ra.include_merge = function(fn, ...)
 end
 
 ra.print = ra.include_sh 'modules/print.lua'
-ra.oop = ra.include_sh 'modules/oop.lua'
-ra.util = ra.include_sh 'modules/util.lua'
-ra.fn = ra.include_sh 'modules/fn.lua'
+ra.oop   = ra.include_sh 'modules/oop.lua'
+ra.util  = ra.include_sh 'modules/util.lua'
+ra.fn    = ra.include_sh 'modules/fn.lua'
 ra.bench = ra.include_sh 'modules/bench.lua'
-ra.path = ra.include_sh 'modules/path.lua'
+ra.path  = ra.include_sh 'modules/path.lua'
+ra.async = ra.include_sh 'modules/async.lua'
 
 return ra

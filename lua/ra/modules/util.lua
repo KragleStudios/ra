@@ -17,10 +17,10 @@ util.max = max
 
 function util.extend(tbl, values)
 	local newTbl = {}
-	for k,v in pairs(tbl) do
+	for k,v in pairs(values) do
 		newTbl[k] = v
 	end
-	for k,v in pairs(values) do
+	for k,v in pairs(tbl) do
 		newTbl[k] = v
 	end
 	return newTbl
@@ -45,6 +45,14 @@ function util.map( tbl, func )
 		tbl[k] = func( v, k );
 	end
 	return tbl;
+end
+
+function util.reduce(tbl, initial, func)
+	local last = initial
+	for k, v in ipairs(tbl) do
+		last = func(v, initial)
+	end
+	return last
 end
 
 return util
