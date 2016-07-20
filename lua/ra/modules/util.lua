@@ -58,6 +58,7 @@ end
 
 local scales = {
 	["s"] = 1, -- Second
+	["min"] = 60, -- Minute
 	["h"] = 3600, -- Hour
 	["d"] = 86400, -- Day
 	["w"] = 604800, -- Week 
