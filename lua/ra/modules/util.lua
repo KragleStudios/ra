@@ -73,8 +73,7 @@ local scales = {
 function util.timestring(str)
 	local time = 0
 	str = str:gsub("%s+", "") -- Trim spaces etc.
-	for s in str:gmatch( "%d+%a+") do
-		local scl, amt = s:sub(s:find("%a"), s:find("%a") + s:len() ), s:sub(1, s:find("%a") - 1)
+	for amt, scl in str:gmatch( "(%d+)(%a+)") do
 		if scales[scl] then
 			time = time + (scales[scl] * amt)
 		end
