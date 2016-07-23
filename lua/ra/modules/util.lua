@@ -55,4 +55,16 @@ function util.reduce(tbl, initial, func)
 	return last
 end
 
+function util.union(tbl1, tbl2)
+	local tbl = {}
+	for k,v in ipairs(tbl1) do
+		tbl[k] = v
+	end
+	local offset = #tbl 
+	for k,v in ipairs(tbl2) do
+		tbl[k + offset] = v
+	end
+	return tbl
+end
+
 return util
