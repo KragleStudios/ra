@@ -67,4 +67,32 @@ function util.union(tbl1, tbl2)
 	return tbl
 end
 
+local scales = {
+	["s"] = 1, -- Second
+	["min"] = 60, -- Minute
+	["h"] = 3600, -- Hour
+	["d"] = 86400, -- Day
+	["w"] = 604800, -- Week 
+	["m"] = 2628000, -- Month
+	["y"] = 31536000, -- Year
+	["ly"] = 31622400, -- Leap Year
+	["dec"] = 315360000, -- Decade
+	["mil"] = 31536000000, -- Millenium
+	["eon"] = 157680000000000 -- Eon
+}
+
+function util.timestring(str)
+	local time = 0
+	str = str:gsub("%s+", "") -- Trim spaces etc.
+	for amt, scl in str:gmatch( "(%d+)(%a+)") do
+		if scales[scl] then
+			time = time + (scales[scl] * amt)
+		end
+	end
+	if time == 0 then -- Eh doesnt look clean :( but I dont want to return a 0
+		return false
+	end
+	return (time / 60)
+end
+
 return util
