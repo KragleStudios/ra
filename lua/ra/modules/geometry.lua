@@ -1,11 +1,25 @@
 local geom = {}
 
+geom.polygon = ra.include_sh 'ra/modules/geometry/polygon.lua'
+geom.vectorlight = ra.include_sh 'ra/modules/geometry/vectorlight.lua'
+
+
 local math_sqrt = math.sqrt 
 
 --
 -- A POINT OBJECT
 --
-local point_mt = {}
+local point_mt = setmetatable({}, {
+	__index = function(self, key) 
+		if key == 'x' then
+			return self[1]
+		elseif key == 'y' then
+			return self[2]
+		end
+		return nil
+	end
+})
+
 point_mt.__index = point_mt
 point_mt.__call = function(self)
 	return self[1], self[2]
@@ -18,6 +32,14 @@ point_mt.__lt = function(self, other)
 		return self[2] < other[2]
 	end
 	return self[1] < other[1]
+end 
+
+point_mt.__le = function(self, other)
+	if self[1] == other[1] then
+		return self[2] <= other[2]
+	end
+	return self[1] <= other[1]
+end
 
 function point_mt:getX()
 	return self[1]
@@ -41,6 +63,11 @@ end
 
 function geom.point(x, y)
 	return setmetatable({x, y}, point_mt)	
+end
+
+function geom.unpackPoints(p, ...)
+	if not p then return end 
+	return p[1], p[2], geom.unpackPoints(...)
 end
 
 --
@@ -81,10 +108,26 @@ end
 
 triangle_mt.__index = triangle_mt
 
-function geom.createTriangle(x1, y1, x2, y2, x3, y3)
+function geom.createTriangle(p1, p2, p3)
 	local obj = setmetatable({}, triangle_mt)
-	obj:ctor(x1, y1, x2, y2, x3, y3)
+	obj:ctor(p1, p2, p3)
 	return obj 
+end
+
+
+function geom.triangulatePolygon(...)
+	local polygon = geom.polygon(geom.unpackPoints(...))
+	local triangles = polygon:triangulate()
+	
+	for k,v in ipairs(triangles) do
+		triangles[k] = geom.createTriangle(
+				geom.point(v.vertices[1].x, v.vertices[1].y),
+				geom.point(v.vertices[2].x, v.vertices[2].y),
+				geom.point(v.vertices[3].x, v.vertices[3].y)
+			)
+	end
+
+	return triangles
 end
 
 return geom
