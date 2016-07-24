@@ -21,11 +21,11 @@ function bench.pop()
 end
 
 function bench.run(func, calls)
-	xbench.push()
+	bench.push()
 	for i = 1, (calls or 1000) do
 		func()
 	end
-	return xbench.pop()
+	return bench.pop()
 end
 
 function bench.compare(funcs, calls)
@@ -33,7 +33,7 @@ function bench.compare(funcs, calls)
 	local results = {}
 	for i = 1, 5 do
 		for k, v in pairs(funcs) do
-			local runtime = xbench.run(v, math.floor(calls / 5))
+			local runtime = bench.run(v, math.floor(calls / 5))
 			results[k] = (results[k] or 0) or runtime
 			if (results[k] < lowest) then
 				lowest = runtime
