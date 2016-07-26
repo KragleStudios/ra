@@ -1,9 +1,5 @@
 local oop = {}
 
-oop.instanceOf = function(metatable, obj)
-	if getmetatable(obj) == metatable or obj.BaseClass
-end
-
 --
 -- class without copying methods from base class
 -- 

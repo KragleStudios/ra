@@ -5,6 +5,7 @@ geom.vectorlight = ra.include_sh 'ra/modules/geometry/vectorlight.lua'
 
 
 local math_sqrt = math.sqrt 
+local setmetatable = setmetatable
 
 --
 -- A POINT OBJECT
@@ -41,6 +42,18 @@ point_mt.__le = function(self, other)
 	return self[1] <= other[1]
 end
 
+point_mt.__add = function(self, other)
+	return setmetatable({self[1] + other[1], self[2] + other[2]}, point_mt)
+end 
+
+point_mt.__sub = function(self, other)
+	return setmetatable({self[1] - other[1], self[2] - other[2]}, point_mt)
+end
+
+point_mt.__mul = function(self, const)
+	return setmetatable({self[1] * const, self[2] * const }, point_mt)
+end
+
 function point_mt:getX()
 	return self[1]
 end
@@ -59,6 +72,15 @@ function point_mt:distTo(point2)
 	local dx = self[1] - point2[1]
 	local dy = self[2] - point2[2]
 	return math_sqrt(dx * dx + dy * dy)
+end
+
+function point_mt:length()
+	return math_sqrt(self[1] * self[1] + self[2] * self[2])
+end
+
+function point_mt:normalize()
+	local len = self:length()
+	return setmetatable({self[1] / len, self[2] / len}, point_mt)
 end
 
 function geom.point(x, y)
@@ -128,6 +150,47 @@ function geom.triangulatePolygon(...)
 	end
 
 	return triangles
+end
+
+
+--
+-- LINES
+--
+
+local edge_mt = {}
+edge_mt.__index = edge_mt
+
+function edge_mt:intersectWith(other, ignoreLength)
+	local l1x1 = self[1][1]
+	local l1y1 = self[1][2]
+	local l1x2 = self[2][1]
+	local l1y2 = self[2][2]
+
+	local l2x1 = other[1][1]
+	local l2y1 = other[1][2]
+	local l2x2 = other[2][1]
+	local l2y2 = other[2][2]
+
+	local d = (l2y2 - l2y1) * (l1x2 - l1x1) - (l2x2 - l2x1) * (l1y2 - l1y1)
+
+	-- this happens if hte lines are parallel
+	if d == 0 then return 0 end 
+
+	local n_a = (l2x2 - l2x1) * (l1y1 - l2y1) - (l2y2 - l2y1) * (l1x1 - l2x1)
+	local n_b = (l1x2 - l1x1) * (l1y1 - l2y1) - (l1y2 - l1y1) * (l1x1 - l2x1)
+
+	-- compute the fractional points of intersection
+	local ua = n_a / d 
+	local ub = n_b / d 
+
+	if ignoreLength or (ua >= 0 and ua <= 1 and ub >= 0 and ub <= 1) then 
+		return true, l1x1 + (ua * (l1x2 - l1x1)), l1y1 + (ua * (l1y2 - l1y1))
+	end
+	return false
+end
+
+function geom.edge(p1, p2)
+	return setmetatable({p1, p2}, edge_mt)
 end
 
 return geom
