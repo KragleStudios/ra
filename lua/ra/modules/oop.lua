@@ -1,24 +1,63 @@
 local oop = {}
 
-oop.class = function(...)
-	local methods = {}
-	for k, obj in ipairs({...}) do
-		for k,v in pairs(obj) do
-			if not methods[k] then 
-				methods[k] = v
-			end
-		end
+oop.instanceOf = function(metatable, obj)
+	if getmetatable(obj) == metatable or obj.BaseClass
+end
+
+--
+-- class without copying methods from base class
+-- 
+oop.class = function(baseclass, meta)
+	if not meta then
+		meta = baseclass 
+		baseclass = nil
 	end
-	local mt = {
-		__index = methods
+
+	local meta_mt = {}
+	local class_mt = {
+		__index = meta 
 	}
-	return function(tbl)
-		return setmetatable(tbl or {}, mt)
+
+	if baseclass then
+		meta.BaseClass = baseclass 
+		meta_mt.__index = baseclass 
+	end
+
+	setmetatable(meta, meta_mt)
+
+	meta_mt.__call = function(self, ...)
+		return setmetatable({}, class_mt):ctor(...)
 	end
 end
 
-oop.quick_inherit = function(obj, parent)
-	return setmetatable(class, {
-			__index = parent
-		})
+-- 
+-- class with copying methods from baseclass
+--
+
+oop.fast_class = function(baseclass, meta)
+	if not meta then
+		meta = baseclass 
+		baseclass = nil
+	end
+
+	local class_mt = {
+		__index = meta 
+	}
+
+	if baseclass then 
+		meta.BaseClass = baseclass
+		for k,v in pairs(baseclass)
+			if not meta[k] then
+				meta[k] = v
+			end
+		end
+	end 
+
+	setmetatable(meta, {
+		__call = function(self, ...)
+			return setmetatable({}, class_mt):ctor(...)
+		end,
+	})
+
+	return meta 
 end

@@ -17,5 +17,6 @@ ra.path  = ra.include_sh 'modules/path.lua'
 ra.async = ra.include_sh 'modules/async.lua'
 ra.geom  = ra.include_sh 'modules/geometry.lua'
 ra.ds    = ra.include_sh 'modules/datastructures.lua'
+ra.net   = ra.include_sh 'modules/net.lua'
 
 return ra

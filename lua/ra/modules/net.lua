@@ -1,3 +1,5 @@
+local ranet = {}
+
 local work = {}
 local read = {}
 
@@ -109,3 +111,35 @@ timer.Create('net.bigdata.send', 0.05, 0, function()
 		end
 	end
 end)
+
+
+if SERVER then 
+	do 
+		local queue = {}
+		local function processQueue()
+			if queue then 
+				for k,v in ipairs(queue) do
+					v()
+				end
+				queue = nil 
+			end
+		end
+
+		hook.Add('InitPostEntity', 'net.waitForPlayer', function(pl)
+			processQueue()
+		end)
+
+		ranet.WaitForPlayer = function(fn)
+			if queue and IsValid(LocalPlayer()) then
+				processQueue()
+			end
+			if not queue then
+				fn()
+			else
+				table.insert(queue, fn)
+			end
+		end
+
+	end
+
+return ranet 
