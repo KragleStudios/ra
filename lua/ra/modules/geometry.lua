@@ -114,12 +114,11 @@ function triangle_mt:ctor(p1, p2, p3)
 	local c, d = -c1/det, a1/det
 
 	self.isPointInside = function(self, x, y)
-		x = x - x1 
-		y = y - y1
-
-		x = a * x + b * y 
-		y = c * x + d * y
-
+		-- translate to the origin
+		x, y = x - x1, y - y1
+		-- apply the transformation matrix
+		x, y = a * x + b * y, c * x + d * y
+		
 		return x >= 0 and y >= 0 and x + y < 1 
 	end
 end
