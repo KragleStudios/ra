@@ -156,7 +156,6 @@ end
 --
 -- LINES
 --
-
 local edge_mt = {}
 edge_mt.__index = edge_mt
 
@@ -192,5 +191,6 @@ end
 function geom.edge(p1, p2)
 	return setmetatable({p1, p2}, edge_mt)
 end
+
 
 return geom

@@ -42,7 +42,7 @@ oop.fast_class = function(baseclass, meta)
 
 	if baseclass then 
 		meta.BaseClass = baseclass
-		for k,v in pairs(baseclass)
+		for k,v in pairs(baseclass) do
 			if not meta[k] then
 				meta[k] = v
 			end

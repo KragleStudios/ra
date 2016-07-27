@@ -1,145 +1,126 @@
+local net = net 
 local ranet = {}
 
-local work = {}
-local read = {}
-
-local MESSAGE_SIZE = 8 * 1024
-
-local messageIndex = 1
-
-local send = SERVER and net.Send or net.SendToServer 
-
-if SERVER then
-	util.AddNetworkString('net.bigdata.sendBlock')
-	send = net.Send 
-else 
-	send = net.SendToServer 
+if SERVER then 
+	util.AddNetworkString('ra.pns')
 end
 
-function net.WriteBigData(data, players)
-	local id = messageIndex
-	local messageLength = string.len(data)
+local txnid = 0
+function ranet.WriteStream(data, targs, callback)
+	-- generate a unique id for this txn
+	txnid = (txnid + 1) % 0xFFFF
 
-	net.WriteUInt(id, 32)
-	net.WriteUInt(messageLength, 32)
-	messageIndex = messageIndex + 1
+	-- iterate over the data to send
+	local count = 0
+	local iter = function()
+		local seg = data:sub(count, count + 0x7FFF)
+		count = count + 0x8000
 
-	local segmentOffset = 1
-
-	work[messageIndex] = function()
-		local segment = string.sub(data, segmentOffset, segmentOffset + MESSAGE_SIZE)
-		segmentOffset = segmentOffset + MESSAGE_SIZE + 1 
-
-		local slen = string.len(segment)
-
-		net.Start('net.bigdata.sendBlock')
-		
-		net.WriteUInt(id, 32)
-		net.WriteUInt(slen, 16)
-		net.WriteData(segment, slen)
-
-		send(players)
-
-		return segmentOffset > messageLength 
+		return seg
 	end
-end
 
-function net.ReadBigData(callback, player)
-	if SERVER then assert(player, "must pass the player to continue to read the data from") end
+	-- send a chunk of data
+	local function send()
+		local block = iter()
+		local size = block:len()
+		if block and block:len() > 0 then
+			net.Start('ra.pns')
+				net.WriteUInt(txnid, 16)
+				net.WriteUInt(size, 16)
+				net.WriteData(block, size)
+			if SERVER then
+			net.Send(targs)
+			else
+			net.SendToServer()
+			end
+			timer.Simple(0.01, send)
+		elseif callback then
+			callback()
+		end
+	end
+
+	-- write txnid and chunks to be expected
+	net.WriteUInt(txnid, 16)
+	net.WriteUInt(math.ceil(data:len()/ 0x8000), 16)
 	
-	local txnid = net.ReadUInt(32)
-	local messageLength = net.ReadUInt(32)
-	local tbl
-
-	if SERVER then 
-		tbl = read[player]
-		if not tbh then tbl = {} read[player] = tbl end
-	else 
-		tbl = read 
-	end
-
-	tbl[txnid] = {
-		txnid = txnid,
-		messageParts = {},
-		totalLength = 0,
-		messageLength = messageLength,
-		callback = callback,
-	}
+	timer.Simple(0.01, send)
 end
 
+local buckets = {}
 if SERVER then
-	net.Receive('net.bigdata.sendBlock', function(_, pl)
-		local txnid = net.ReadUInt(32)
-		if not read[pl] or not read[pl][txnid] then return end 
-		local segment = net.ReadData(net.ReadUInt(16))
-		local obj = read[pl][txnid] 
-		table.insert(obj.messageParts, segment)
-		obj.totalLength = obj.totalLength + string.len(segment)
+	function ranet.ReadStream(src, callback)
+		if not src then error('stream source must be provided to receive a stream from a player') end
+		if not callback then error('callback must be provided for stream read completion') end
+		if not buckets[src] then buckets[src] = {} end
+		buckets[src][net.ReadUInt(16)] = {len=net.ReadUInt(16), callback=callback}
+	end
+	net.Receive('ra.pns', function(_,pl)
+		local txnid = net.ReadUInt(16)
+		if not buckets[pl] or not buckets[pl][txnid] then return end
 
-		if obj.totalLength >= messageLength then
-			read[pl][txnid] = nil 
-			obj.callback(table.concat(obj.messageParts))
+		local bucket = buckets[pl][txnid]
+
+		local size = net.ReadUInt(16)
+		local data = net.ReadData(size)
+		bucket[#bucket+1] = data
+
+		if #bucket == bucket.len then
+			buckets[pl][txnid] = nil
+			bucket.callback(table.concat(bucket))
 		end
 	end)
 else
-	net.Receive('net.bigdata.sendBlock', function()
-		local txnid = net.ReadUInt(32)
-		if not read[txnid] then return end
-		local segment = net.ReadData(net.ReadUInt(16))
+	
+	function ranet.ReadStream(callback)
+		if not callback then
+			error('callback must be provided for stream read completion')
+		end
+		buckets[net.ReadUInt(16)] = {len=net.ReadUInt(16), callback=callback}
+	end
 
-		local obj = read[txnid] 
-		table.insert(obj.messageParts, segment)
-		obj.totalLength = obj.totalLength + string.len(segment)
+	net.Receive('ra.pns', function(_)
+		local txnid = net.ReadUInt(16)
+		if not buckets[txnid] then return end
 
-		if obj.totalLength >= obj.messageLength then
-			read[txnid] = nil 
-			obj.callback(table.concat(obj.messageParts, ''))
+		local bucket = buckets[txnid]
+
+		local size = net.ReadUInt(16)
+		local data = net.ReadData(size)
+		bucket[#bucket+1] = data
+
+		if #bucket == bucket.len then
+			buckets[txnid] = nil
+			bucket.callback(table.concat(bucket))
 		end
 	end)
 end
 
-if SERVER then 
-	hook.Add('PlayerDisconnected', 'net.bigdata.cleanup', function(player)
-		read[player] = nil 
-	end)
-end
 
-timer.Create('net.bigdata.send', 0.05, 0, function()
-	for k,v in pairs(work) do
-		if v() then
-			work[k] = nil 
+if CLIENT then 
+	local queue = {}
+	local function processQueue()
+		if queue then 
+			for k,v in ipairs(queue) do
+				v()
+			end
+			queue = nil 
 		end
 	end
-end)
 
+	hook.Add('InitPostEntity', 'net.waitForPlayer', function()
+		processQueue()
+	end)
 
-if SERVER then 
-	do 
-		local queue = {}
-		local function processQueue()
-			if queue then 
-				for k,v in ipairs(queue) do
-					v()
-				end
-				queue = nil 
-			end
-		end
-
-		hook.Add('InitPostEntity', 'net.waitForPlayer', function(pl)
+	function ranet.WaitForPlayer(fn)
+		if queue and IsValid(LocalPlayer()) then
 			processQueue()
-		end)
-
-		ranet.WaitForPlayer = function(fn)
-			if queue and IsValid(LocalPlayer()) then
-				processQueue()
-			end
-			if not queue then
-				fn()
-			else
-				table.insert(queue, fn)
-			end
 		end
-
+		if not queue then
+			fn()
+		else
+			table.insert(queue, fn)
+		end
 	end
+end
 
 return ranet 
