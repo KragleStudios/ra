@@ -21,7 +21,7 @@ local point2d_mt = setmetatable({}, {
 	end
 })
 
-point2d_mt.__index = point_mt
+point2d_mt.__index = point2d_mt
 point2d_mt.__call = function(self)
 	return self[1], self[2]
 end
@@ -43,15 +43,15 @@ point2d_mt.__le = function(self, other)
 end
 
 point2d_mt.__add = function(self, other)
-	return setmetatable({self[1] + other[1], self[2] + other[2]}, point_mt)
+	return setmetatable({self[1] + other[1], self[2] + other[2]}, point2d_mt)
 end 
 
 point2d_mt.__sub = function(self, other)
-	return setmetatable({self[1] - other[1], self[2] - other[2]}, point_mt)
+	return setmetatable({self[1] - other[1], self[2] - other[2]}, point2d_mt)
 end
 
 point2d_mt.__mul = function(self, const)
-	return setmetatable({self[1] * const, self[2] * const }, point_mt)
+	return setmetatable({self[1] * const, self[2] * const }, point2d_mt)
 end
 
 function point2d_mt:getX()
@@ -80,7 +80,7 @@ end
 
 function point2d_mt:normalize()
 	local len = self:length()
-	return setmetatable({self[1] / len, self[2] / len}, point_mt)
+	return setmetatable({self[1] / len, self[2] / len}, point2d_mt)
 end
 
 function geom.point(x, y)
@@ -119,7 +119,7 @@ function triangle_mt:ctor(p1, p2, p3)
 		-- apply the transformation matrix
 		x, y = a * x + b * y, c * x + d * y
 		
-		return x >= 0 and y >= 0 and x + y < 1 
+		return x >= 0 and y >= 0 and x + y <= 1 
 	end
 end
 
