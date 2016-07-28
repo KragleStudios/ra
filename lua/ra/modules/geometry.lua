@@ -10,7 +10,7 @@ local setmetatable = setmetatable
 --
 -- A POINT OBJECT
 --
-local point_mt = setmetatable({}, {
+local point2d_mt = setmetatable({}, {
 	__index = function(self, key) 
 		if key == 'x' then
 			return self[1]
@@ -21,70 +21,70 @@ local point_mt = setmetatable({}, {
 	end
 })
 
-point_mt.__index = point_mt
-point_mt.__call = function(self)
+point2d_mt.__index = point_mt
+point2d_mt.__call = function(self)
 	return self[1], self[2]
 end
-point_mt.__eq = function(self, other)
+point2d_mt.__eq = function(self, other)
 	return self[1] == other[1] and self[2] == other[2]
 end
-point_mt.__lt = function(self, other)
+point2d_mt.__lt = function(self, other)
 	if self[1] == other[1] then
 		return self[2] < other[2]
 	end
 	return self[1] < other[1]
 end 
 
-point_mt.__le = function(self, other)
+point2d_mt.__le = function(self, other)
 	if self[1] == other[1] then
 		return self[2] <= other[2]
 	end
 	return self[1] <= other[1]
 end
 
-point_mt.__add = function(self, other)
+point2d_mt.__add = function(self, other)
 	return setmetatable({self[1] + other[1], self[2] + other[2]}, point_mt)
 end 
 
-point_mt.__sub = function(self, other)
+point2d_mt.__sub = function(self, other)
 	return setmetatable({self[1] - other[1], self[2] - other[2]}, point_mt)
 end
 
-point_mt.__mul = function(self, const)
+point2d_mt.__mul = function(self, const)
 	return setmetatable({self[1] * const, self[2] * const }, point_mt)
 end
 
-function point_mt:getX()
+function point2d_mt:getX()
 	return self[1]
 end
 
-function point_mt:getY()
+function point2d_mt:getY()
 	return self[2]
 end
 
-function point_mt:distToSqr(point2)
+function point2d_mt:distToSqr(point2)
 	local dx = self[1] - point2[1]
 	local dy = self[2] - point2[2]
 	return dx * dx + dy * dy 
 end 
 
-function point_mt:distTo(point2)
+function point2d_mt:distTo(point2)
 	local dx = self[1] - point2[1]
 	local dy = self[2] - point2[2]
 	return math_sqrt(dx * dx + dy * dy)
 end
 
-function point_mt:length()
+function point2d_mt:length()
 	return math_sqrt(self[1] * self[1] + self[2] * self[2])
 end
 
-function point_mt:normalize()
+function point2d_mt:normalize()
 	local len = self:length()
 	return setmetatable({self[1] / len, self[2] / len}, point_mt)
 end
 
 function geom.point(x, y)
-	return setmetatable({x, y}, point_mt)	
+	return setmetatable({x, y}, point2d_mt)	
 end
 
 function geom.unpackPoints(p, ...)
