@@ -10,86 +10,139 @@ local setmetatable = setmetatable
 --
 -- A POINT OBJECT
 --
-local point2d_mt = setmetatable({}, {
-	__index = function(self, key) 
-		if key == 'x' then
-			return self[1]
-		elseif key == 'y' then
-			return self[2]
+local point_mt = {}
+point_mt.__index = point_mt 
+
+point_mt.__eq = function(self, other)
+	if #self ~= #other then error 'attempt to compair points of different dimensionalities' end
+	for i = 1, #self do
+		if self[i] ~= other[i] then return false end
+	end
+	return true 
+end
+
+point_mt.__lt = function(self, other)
+	if #self ~= #other then error 'attempt to compair points of different dimensionalities' end
+	for i = 1, #self do
+		if self[i] < other[i] then return true end
+	end
+	return false 
+end
+
+point_mt.__le = function(self, other)
+	if #self ~= #other then error 'attempt to compair points of different dimensionalities' end
+	for i = 1, #self do
+		if self[i] <= other[i] then return true end
+	end
+	return false 
+end
+
+point_mt.__add = function(self, other)
+	if #self ~= #other then error 'attempt to add points of different dimensionalities' end 
+	local function addHelper(a, b, i, c)
+		if i > c then return end 
+		return a[i] + b[i], addHelper(a, b, i + 1, c)
+	end
+	return setmetatable({addHelper(self, other, 1, #self)}, point_mt)
+end
+
+point_mt.__sub = function(self, other)
+	if #self ~= #other then error 'attempt to subtract points of different dimensionalities' end 
+	local function subHelper(a, b, i, c)
+		if i > c then return end 
+		return a[i] - b[i], subHelper(a, b, i + 1, c)
+	end
+	return setmetatable({subHelper(self, other, 1, #self)}, point_mt)
+end
+
+point_mt.__mul = function(self, other)
+	if getmetatable(other) == point_mt then 
+		if #self ~= #other then error 'attempt to multiply points of different dimensionalities' end 
+		local function mulHelper(a, b, i, c)
+			if i > c then return end
+			return a[i] * b[i], mulHelper(a, b, i + 1, c)
 		end
-		return nil
+		return setmetatable({mulHelper(self, other, 1, #self)}, point_mt)
+	else 
+		local function mulHelper(a, b, i, c)
+			if i > c then return end
+			return a[i] * b, mulHelper(a, b, i + 1, c)
+		end
+		return setmetatable({mulHelper(self, other, 1, #self)}, point_mt)
 	end
-})
+end
 
-point2d_mt.__index = point2d_mt
-point2d_mt.__call = function(self)
-	return self[1], self[2]
-end
-point2d_mt.__eq = function(self, other)
-	return self[1] == other[1] and self[2] == other[2]
-end
-point2d_mt.__lt = function(self, other)
-	if self[1] == other[1] then
-		return self[2] < other[2]
+point_mt.__div = function(self, other)
+	local function divHelper(a, b, i, c)
+		if i > c then return end
+		return a[i] / b, divHelper(a, b, i + 1, c)
 	end
-	return self[1] < other[1]
-end 
-
-point2d_mt.__le = function(self, other)
-	if self[1] == other[1] then
-		return self[2] <= other[2]
-	end
-	return self[1] <= other[1]
+	return setmetatable({divHelper(self, other, 1, #self)}, point_mt)
 end
 
-point2d_mt.__add = function(self, other)
-	return setmetatable({self[1] + other[1], self[2] + other[2]}, point2d_mt)
-end 
-
-point2d_mt.__sub = function(self, other)
-	return setmetatable({self[1] - other[1], self[2] - other[2]}, point2d_mt)
+point_mt.__tostring = function(self, other)
+	return '(' .. table.concat(self, ', ') .. ')'
 end
 
-point2d_mt.__mul = function(self, const)
-	return setmetatable({self[1] * const, self[2] * const }, point2d_mt)
-end
-
-function point2d_mt:getX()
+function point_mt:getX()
 	return self[1]
 end
 
-function point2d_mt:getY()
+function point_mt:getY()
 	return self[2]
 end
 
-function point2d_mt:distToSqr(point2)
-	local dx = self[1] - point2[1]
-	local dy = self[2] - point2[2]
-	return dx * dx + dy * dy 
+function point_mt:getZ()
+	return self[3]
+end
+
+function point_mt:getW()
+	return self[4]
+end
+
+function point_mt:distToSqr(point2)
+	if #self ~= #point2 then error 'attempt to find distance between two points of different dimensionalities' end
+	local sum = 0
+	for i = 1, #self do
+		sum = sum + (self[i] - point2[i]) * (self[i] - point2[i])
+	end
+	return sum
 end 
 
-function point2d_mt:distTo(point2)
-	local dx = self[1] - point2[1]
-	local dy = self[2] - point2[2]
-	return math_sqrt(dx * dx + dy * dy)
+function point_mt:distTo(point2)
+	return math_sqrt(self:distToSqr(point2))
 end
 
-function point2d_mt:length()
-	return math_sqrt(self[1] * self[1] + self[2] * self[2])
+function point_mt:length()
+	local sum = 0
+	for i = 1, #self do
+		sum = sum + self[i] * self[i]
+	end
+	return math_sqrt(sum)
 end
 
-function point2d_mt:normalize()
-	local len = self:length()
-	return setmetatable({self[1] / len, self[2] / len}, point2d_mt)
+function point_mt:normalize()
+	return self / self:length()
 end
 
-function geom.point(x, y)
-	return setmetatable({x, y}, point2d_mt)	
+function point_mt:unpack()
+	return unpack(self)
 end
 
-function geom.unpackPoints(p, ...)
-	if not p then return end 
-	return p[1], p[2], geom.unpackPoints(...)
+function geom.point(...)
+	return setmetatable({...}, point_mt)	
+end
+
+function geom.unpackPoints(...)
+	local points = {...}
+	local function unpackHelper(pcount, pindex, icount, iindex)
+		if iindex > icount then
+			if pindex == pcount then return nil end 
+			return unpackHelper(pcount, pindex + 1, #points[pindex + 1], 1)
+		end
+		return points[pindex][iindex], unpackHelper(pcount, pindex, icount, iindex + 1)
+	end
+	return unpackHelper(#points, 1, #points[1], 1)
 end
 
 --
@@ -102,9 +155,9 @@ function triangle_mt:ctor(p1, p2, p3)
 	self.p2 = p2 
 	self.p3 = p3 
 
-	local x1, y1 = p1()
-	local x2, y2 = p2()
-	local x3, y3 = p3()
+	local x1, y1 = p1[1], p1[2]
+	local x2, y2 = p2[1], p2[2]
+	local x3, y3 = p3[1], p3[2]
 
 	-- compute the transformation to the unit triangle
 	local a1, b1 = x2 - x1, x3 - x1
@@ -191,5 +244,7 @@ function geom.edge(p1, p2)
 	return setmetatable({p1, p2}, edge_mt)
 end
 
+local p1 = geom.point(12, 13, 47)
+local p2 = geom.point(31, 23, 22)
 
 return geom
