@@ -4,21 +4,21 @@ geom.polygon = ra.include_sh 'ra/modules/geometry/polygon.lua'
 geom.vectorlight = ra.include_sh 'ra/modules/geometry/vectorlight.lua'
 
 
-local math_sqrt = math.sqrt 
+local math_sqrt = math.sqrt
 local setmetatable = setmetatable
 
 --
 -- A POINT OBJECT
 --
 local point_mt = {}
-point_mt.__index = point_mt 
+point_mt.__index = point_mt
 
 point_mt.__eq = function(self, other)
 	if #self ~= #other then error 'attempt to compair points of different dimensionalities' end
 	for i = 1, #self do
 		if self[i] ~= other[i] then return false end
 	end
-	return true 
+	return true
 end
 
 point_mt.__lt = function(self, other)
@@ -26,7 +26,7 @@ point_mt.__lt = function(self, other)
 	for i = 1, #self do
 		if self[i] < other[i] then return true end
 	end
-	return false 
+	return false
 end
 
 point_mt.__le = function(self, other)
@@ -34,36 +34,36 @@ point_mt.__le = function(self, other)
 	for i = 1, #self do
 		if self[i] <= other[i] then return true end
 	end
-	return false 
+	return false
 end
 
 point_mt.__add = function(self, other)
-	if #self ~= #other then error 'attempt to add points of different dimensionalities' end 
+	if #self ~= #other then error 'attempt to add points of different dimensionalities' end
 	local function addHelper(a, b, i, c)
-		if i > c then return end 
+		if i > c then return end
 		return a[i] + b[i], addHelper(a, b, i + 1, c)
 	end
 	return setmetatable({addHelper(self, other, 1, #self)}, point_mt)
 end
 
 point_mt.__sub = function(self, other)
-	if #self ~= #other then error 'attempt to subtract points of different dimensionalities' end 
+	if #self ~= #other then error 'attempt to subtract points of different dimensionalities' end
 	local function subHelper(a, b, i, c)
-		if i > c then return end 
+		if i > c then return end
 		return a[i] - b[i], subHelper(a, b, i + 1, c)
 	end
 	return setmetatable({subHelper(self, other, 1, #self)}, point_mt)
 end
 
 point_mt.__mul = function(self, other)
-	if getmetatable(other) == point_mt then 
-		if #self ~= #other then error 'attempt to multiply points of different dimensionalities' end 
+	if getmetatable(other) == point_mt then
+		if #self ~= #other then error 'attempt to multiply points of different dimensionalities' end
 		local function mulHelper(a, b, i, c)
 			if i > c then return end
 			return a[i] * b[i], mulHelper(a, b, i + 1, c)
 		end
 		return setmetatable({mulHelper(self, other, 1, #self)}, point_mt)
-	else 
+	else
 		local function mulHelper(a, b, i, c)
 			if i > c then return end
 			return a[i] * b, mulHelper(a, b, i + 1, c)
@@ -107,7 +107,7 @@ function point_mt:distToSqr(point2)
 		sum = sum + (self[i] - point2[i]) * (self[i] - point2[i])
 	end
 	return sum
-end 
+end
 
 function point_mt:distTo(point2)
 	return math_sqrt(self:distToSqr(point2))
@@ -130,14 +130,14 @@ function point_mt:unpack()
 end
 
 function geom.point(...)
-	return setmetatable({...}, point_mt)	
+	return setmetatable({...}, point_mt)
 end
 
 function geom.unpackPoints(...)
 	local points = {...}
 	local function unpackHelper(pcount, pindex, icount, iindex)
 		if iindex > icount then
-			if pindex == pcount then return nil end 
+			if pindex == pcount then return nil end
 			return unpackHelper(pcount, pindex + 1, #points[pindex + 1], 1)
 		end
 		return points[pindex][iindex], unpackHelper(pcount, pindex, icount, iindex + 1)
@@ -150,10 +150,9 @@ end
 --
 local triangle_mt = {}
 function triangle_mt:ctor(p1, p2, p3)
-	
-	self.p1 = p1 
-	self.p2 = p2 
-	self.p3 = p3 
+	self.p1 = p1
+	self.p2 = p2
+	self.p3 = p3
 
 	local x1, y1 = p1[1], p1[2]
 	local x2, y2 = p2[1], p2[2]
@@ -162,7 +161,7 @@ function triangle_mt:ctor(p1, p2, p3)
 	-- compute the transformation to the unit triangle
 	local a1, b1 = x2 - x1, x3 - x1
 	local c1, d1 = y2 - y1, y3 - y1
-	local det = a1 * d1 - b1 * c1 
+	local det = a1 * d1 - b1 * c1
 	local a, b = d1/det, -b1/det
 	local c, d = -c1/det, a1/det
 
@@ -171,13 +170,13 @@ function triangle_mt:ctor(p1, p2, p3)
 		x, y = x - x1, y - y1
 		-- apply the transformation matrix
 		x, y = a * x + b * y, c * x + d * y
-		
-		return x >= 0 and y >= 0 and x + y <= 1 
+
+		return x >= 0 and y >= 0 and x + y <= 1
 	end
 end
 
 function triangle_mt:isPointInside(x, y)
-	return false 
+	return false
 end
 
 triangle_mt.__index = triangle_mt
@@ -185,14 +184,14 @@ triangle_mt.__index = triangle_mt
 function geom.createTriangle(p1, p2, p3)
 	local obj = setmetatable({}, triangle_mt)
 	obj:ctor(p1, p2, p3)
-	return obj 
+	return obj
 end
 
 
 function geom.triangulatePolygon(...)
 	local polygon = geom.polygon(geom.unpackPoints(...))
 	local triangles = polygon:triangulate()
-	
+
 	for k,v in ipairs(triangles) do
 		triangles[k] = geom.createTriangle(
 				geom.point(v.vertices[1].x, v.vertices[1].y),
@@ -225,16 +224,16 @@ function edge_mt:intersectWith(other, ignoreLength)
 	local d = (l2y2 - l2y1) * (l1x2 - l1x1) - (l2x2 - l2x1) * (l1y2 - l1y1)
 
 	-- this happens if hte lines are parallel
-	if d == 0 then return 0 end 
+	if d == 0 then return 0 end
 
 	local n_a = (l2x2 - l2x1) * (l1y1 - l2y1) - (l2y2 - l2y1) * (l1x1 - l2x1)
 	local n_b = (l1x2 - l1x1) * (l1y1 - l2y1) - (l1y2 - l1y1) * (l1x1 - l2x1)
 
 	-- compute the fractional points of intersection
-	local ua = n_a / d 
-	local ub = n_b / d 
+	local ua = n_a / d
+	local ub = n_b / d
 
-	if ignoreLength or (ua >= 0 and ua <= 1 and ub >= 0 and ub <= 1) then 
+	if ignoreLength or (ua >= 0 and ua <= 1 and ub >= 0 and ub <= 1) then
 		return true, l1x1 + (ua * (l1x2 - l1x1)), l1y1 + (ua * (l1y2 - l1y1))
 	end
 	return false
