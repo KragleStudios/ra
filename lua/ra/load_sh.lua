@@ -18,5 +18,6 @@ ra.async = ra.include_sh 'modules/async.lua'
 ra.geom  = ra.include_sh 'modules/geometry.lua'
 ra.ds    = ra.include_sh 'modules/datastructures.lua'
 ra.net   = ra.include_sh 'modules/net.lua'
+ra.kvo   = ra.include_sh 'modules/kvo.lua'
 
 return ra

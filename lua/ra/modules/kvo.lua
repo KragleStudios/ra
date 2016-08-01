@@ -1,26 +1,29 @@
 local kvo = {}
 
-local select = select 
-local getmetatable = getmetatable 
+local select = select
+local getmetatable = getmetatable
 
 local kWILDCARD = {}
 local kASTERIX = {}
+kvo.kWILDCARD = kWILDCARD
+kvo.kASTERIX = kASTERIX
+
 
 -- store stack in pure lua
 local _stack_store = {}
 _stack_store[0] = function() return function(...) return ... end end
-_stack_store[1] = function(a) return function(...) return a, ... end end 
-_stack_store[2] = function(a, b) return function(...) return a, b, ... end end 
-_stack_store[3] = function(a, b, c) return function(...) return a, b, c, ... end end 
-_stack_store[4] = function(a, b, c, d) return function(...) return a, b, c, d, ... end end 
-_stack_store[5] = function(a, b, c, d, e) return function(...) return a, b, c, d, e, ... end end 
-_stack_store[6] = function(a, b, c, d, e, f) return function(...) return a, b, c, d, e, f, ... end end 
+_stack_store[1] = function(a) return function(...) return a, ... end end
+_stack_store[2] = function(a, b) return function(...) return a, b, ... end end
+_stack_store[3] = function(a, b, c) return function(...) return a, b, c, ... end end
+_stack_store[4] = function(a, b, c, d) return function(...) return a, b, c, d, ... end end
+_stack_store[5] = function(a, b, c, d, e) return function(...) return a, b, c, d, e, ... end end
+_stack_store[6] = function(a, b, c, d, e, f) return function(...) return a, b, c, d, e, f, ... end end
 _stack_store[7] = function(a, b, c, d, e, f, g) return function(...) return a, b, c, d, e, f, g, ... end end
 _stack_store[8] = function(a, b, c, d, e, f, g, h) return function(...) return a, b, c, d, e, f, g, h, ... end end
 
 local function store_stack(...)
 	local c = select('#', ...)
-	if _stack_store[c] then 
+	if _stack_store[c] then
 		return _stack_store[c](...)
 	else
 		local cur = _stack_store[8](...)
@@ -31,6 +34,24 @@ local function store_stack(...)
 	end
 end
 
+local function compile_path(path)
+	local function compilePathHelper(path, index)
+		local next = string.find(path, '.', index, true)
+		if next then
+			local substr = string.sub(index, next - 1)
+			if substr == '?' then
+				substr = kWILDCARD
+			elseif substr == '*' then
+				return kASTERIX
+			end
+			return substr, compilePathHelper(path, next + 1)
+		end
+	end
+	return compilePathHelper(path, 1)
+end
+
+kvo.compile_path = compile_path
+
 -- create a new key value observable table
 local kvo_mt = {}
 kvo_mt.__index = kvo_mt
@@ -38,7 +59,7 @@ kvo_mt.__index = kvo_mt
  local function kvo_newindex(self, key, value)
  	if type(value) == 'table' and getmetatable(value.__real) ~= kvo_mt then
  		value = kvo.newKVOTable(value) -- convert it to a kvo table
- 	end 
+ 	end
 
 	self.__real[key] = value
 	if self.__observers[kWILDCARD] then
@@ -51,10 +72,15 @@ kvo_mt.__index = kvo_mt
 			fn(value, self)
 		end
 	end
+	if self.__observers[kASTERIX] then
+		for k, fn in pairs(self.__observers[kASTERIX]) do
+			fn(key, value, self)
+		end
+	end
 end
 
 function kvo_mt:_kvo_observe(id, fn, argBuild, a, b, ...)
-	if a == nil then return end 
+	if a == nil then return end
 
 	local realFn
 	if b == nil then
@@ -72,7 +98,16 @@ function kvo_mt:_kvo_observe(id, fn, argBuild, a, b, ...)
 				if type(value) == 'table' and getmetatable(value.__real) == kvo_mt then
 					value:_kvo_observe(id, fn, store_stack(argBuild(key)), b, restOfPath())
 				end
-			end 
+			end
+		elseif a == kASTERIX then
+			realFn = function(key, value, ...)
+				-- check if its a new table in which case * needs to spread over to it
+				if type(value) == 'table' and getmetatable(value.__real) == kvo_mt then
+					value:_kvo_observe(id, fn, store_stack(argBuild(key)), b, kASTERIX)
+				end
+				-- also just call the fn with the value that was set
+				fn(argBuild(key, value, ...))
+			end
 		else
 			-- propogate the observer
 			realFn = function(value)
@@ -83,13 +118,17 @@ function kvo_mt:_kvo_observe(id, fn, argBuild, a, b, ...)
 		end
 	end
 
-	if not self.__observers[a] then self.__observers[a] = {} end 
+	if not self.__observers[a] then self.__observers[a] = {} end
 	self.__observers[a][id] = realFn
 
 	if a == kWILDCARD then
 		for k,v in pairs(rawget(self, '__real')) do
 			realFn(k, v, self)
-		end 
+		end
+	elseif a == kASTERIX then
+		for k,v in pairs(rawget(self, '__real')) do
+			realFn(k, v, self)
+		end
 	elseif rawget(self, '__real')[a] ~= nil then
 		realFn(self[a], self)
 	end
@@ -103,13 +142,13 @@ function kvo.newKVOTable(table)
 	local real = setmetatable({}, kvo_mt)
 	if table then
 		for k,v in pairs(table) do
-			real[k] = v 
-		end 
+			real[k] = v
+		end
 	end
 
 	return setmetatable({__real = real, __observers = {}}, {
 			__index = real,
-			__newindex = kvo_newindex 
+			__newindex = kvo_newindex
 		})
 end
 

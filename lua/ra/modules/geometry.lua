@@ -246,4 +246,9 @@ end
 local p1 = geom.point(12, 13, 47)
 local p2 = geom.point(31, 23, 22)
 
+--
+-- GEOMETRY KD TREE
+--
+
+
 return geom
