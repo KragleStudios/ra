@@ -60,11 +60,22 @@ function util.union(tbl1, tbl2)
 	for k,v in ipairs(tbl1) do
 		tbl[k] = v
 	end
-	local offset = #tbl 
+	local offset = #tbl
 	for k,v in ipairs(tbl2) do
 		tbl[k + offset] = v
 	end
 	return tbl
+end
+
+function util.maxTableKey(tbl) -- key with the max associated value
+	local maxKey, maxValue = next(tbl, nil)
+	for k,v in ipairs(tbl) do
+		if v > maxValue then
+			maxKey = k
+			maxValue = v
+		end
+	end
+	return maxKey, maxValue 
 end
 
 local scales = {
@@ -72,7 +83,7 @@ local scales = {
 	["min"] = 60, -- Minute
 	["h"] = 3600, -- Hour
 	["d"] = 86400, -- Day
-	["w"] = 604800, -- Week 
+	["w"] = 604800, -- Week
 	["m"] = 2628000, -- Month
 	["y"] = 31536000, -- Year
 	["ly"] = 31622400, -- Leap Year
