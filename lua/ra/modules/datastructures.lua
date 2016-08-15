@@ -2,10 +2,10 @@ local ds = {}
 
 --
 -- REDBLACK TREE
--- 
+--
 local redblack = ra.include_sh 'ra/modules/datastructures/redblack.lua'
 local rbtree_mt = {}
-rbtree_mt.__index = rbtree_mt 
+rbtree_mt.__index = rbtree_mt
 function rbtree_mt:insert(value)
 	return redblack.insert(self, value)
 end
@@ -16,7 +16,7 @@ end
 
 function rbtree_mt:iterate()
 	return redblack.iterate(self)
-end 
+end
 
 function rbtree_mt:find(value)
 	return redblack.find(self, value)
@@ -48,7 +48,7 @@ function kv_mt:getKey()
 end
 
 function kv_mt:getValue()
-	return self[2]	
+	return self[2]
 end
 
 function ds.newKVPair(key, value)
@@ -60,11 +60,11 @@ end
 -- @protocol: totally ordered
 --
 local ntupple_mt = {}
-ntupple_mt.__index = ntupple_mt 
+ntupple_mt.__index = ntupple_mt
 ntupple_mt.__eq = function(self, other)
-	if #self ~= #other then return false end 
+	if #self ~= #other then return false end
 	for k,v in ipairs(self) do
-		if other[k] ~= v then return false end 
+		if other[k] ~= v then return false end
 	end
 	return true
 end
@@ -72,7 +72,7 @@ end
 ntupple_mt.__lt = function(self, other)
 	if #self < #other then return true end
 	for k,v in ipairs(self) do
-		if self[v] < other[v] then return true end	
+		if self[v] < other[v] then return true end
 	end
 	return false
 end
@@ -80,13 +80,52 @@ end
 ntupple_mt.__le = function(self, other)
 	if #self <= #other then return true end
 	for k,v in ipairs(self) do
-		if self[v] <= other[v] then return true end	
+		if self[v] <= other[v] then return true end
 	end
-	return false	
+	return false
 end
 
 function ds.nTupple(...)
 	return setmetatable({...}, ntupple_mt)
 end
 
-return ds 
+--
+-- QUEUE
+--
+ds.queue = function()
+	local first = nil
+	local last = nil
+	local size = 0
+
+	return {
+		peek = function()
+			return first and first[1]
+		end,
+		push = function(self, obj)
+			size = size + 1
+			local wrapper = {obj, nil}
+			if not first then
+				first = wrapper
+				last = wrapper
+			else
+				last[2] = wrapper
+				last = wrapper
+			end
+		end,
+		pop = function(self, obj)
+			if first == last then
+				first = nil
+				last = nil
+				size = 0
+			else
+				size = size - 1
+				first = first[2]
+			end
+		end,
+		size = function()
+			return size
+		end
+	}
+end
+
+return ds
