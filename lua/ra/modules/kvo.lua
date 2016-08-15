@@ -39,24 +39,29 @@ end
 kvo.store_stack = store_stack
 
 -- given a formatted path string push the components onto the stack
-local function compile_path(path)
+local function processSymbol(symbol)
+	if symbol == '?' then
+		return kWILDCARD
+	elseif symbol == '*' then
+		ErrorNoHalt("WARNING: asterix not yet supported")
+		return kASTERIX
+	end
+	return symbol
+end
+local function compilePath(path)
 	local function compilePathHelper(path, index)
 		local next = string.find(path, '.', index, true)
 		if next then
-			local substr = string.sub(index, next - 1)
-			if substr == '?' then
-				substr = kWILDCARD
-			elseif substr == '*' then
-				ErrorNoHalt("WARNING: asterix not yet supported")
-				return kASTERIX
-			end
-			return substr, compilePathHelper(path, next + 1)
+			local substr = string.sub(path, index, next - 1)
+			return processSymbol(substr), compilePathHelper(path, next + 1)
 		end
+		local substr = string.sub(path, index)
+		return processSymbol(substr)
 	end
 	return compilePathHelper(path, 1)
 end
 
-kvo.compile_path = compile_path
+kvo.compilePath = compilePath
 
 -- handles adding an index to a keyvalue observable table
 local function kvo_newindex(self, key, value)
