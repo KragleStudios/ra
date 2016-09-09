@@ -40,11 +40,19 @@ function util.filter(tab, func)
 	return tab
 end
 
-function util.map( tbl, func )
+function util.map(tbl, func)
 	for k,v in pairs( tbl )do
 		tbl[k] = func( v, k );
 	end
 	return tbl;
+end
+
+function util.map_copy(tbl, func)
+	local newTable = {}
+	for k,v in pairs(tbl) do
+		newTable[k] = func(v)
+	end
+	return newTable
 end
 
 function util.reduce(tbl, initial, func)
@@ -75,7 +83,7 @@ function util.maxTableKey(tbl) -- key with the max associated value
 			maxValue = v
 		end
 	end
-	return maxKey, maxValue 
+	return maxKey, maxValue
 end
 
 local scales = {
