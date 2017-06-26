@@ -11,32 +11,7 @@ local kASTERIX = {}
 kvo.kWILDCARD = kWILDCARD
 kvo.kASTERIX = kASTERIX -- TODO: implement this
 
-
--- store stack in pure lua
-local _stack_store = {}
-_stack_store[0] = function() return function(...) return ... end end
-_stack_store[1] = function(a) return function(...) return a, ... end end
-_stack_store[2] = function(a, b) return function(...) return a, b, ... end end
-_stack_store[3] = function(a, b, c) return function(...) return a, b, c, ... end end
-_stack_store[4] = function(a, b, c, d) return function(...) return a, b, c, d, ... end end
-_stack_store[5] = function(a, b, c, d, e) return function(...) return a, b, c, d, e, ... end end
-_stack_store[6] = function(a, b, c, d, e, f) return function(...) return a, b, c, d, e, f, ... end end
-_stack_store[7] = function(a, b, c, d, e, f, g) return function(...) return a, b, c, d, e, f, g, ... end end
-_stack_store[8] = function(a, b, c, d, e, f, g, h) return function(...) return a, b, c, d, e, f, g, h, ... end end
-
-local function store_stack(...)
-	local c = select('#', ...)
-	if _stack_store[c] then
-		return _stack_store[c](...)
-	else
-		local cur = _stack_store[8](...)
-		local next = store_stack(select(9, ...))
-		return function(...)
-			return cur(next(...))
-		end
-	end
-end
-kvo.store_stack = store_stack
+kvo.store_stack = ra.fn.store_stack
 
 -- given a formatted path string push the components onto the stack
 local function processSymbol(symbol)
