@@ -1,6 +1,8 @@
 _G.ra = {}
 print "loading Ra by thelastpenguin"
 
+ra.version = '1.0.0'
+
 ra.include_sv = SERVER and include or function() end
 ra.include_cl = CLIENT and include or AddCSLuaFile
 ra.include_sh = function(file)

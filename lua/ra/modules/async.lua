@@ -19,4 +19,21 @@ async.eachSeries = function(objects, iterator, callback)
 	cback()
 end
 
+async.eachParallel = function(tasks, callback)
+	local pendingCompletion = #tasks
+	local results = {}
+	for k, task in pairs(tasks) do
+		local completed = false
+		task(function(data)
+			if completed then return end
+			results[k] = data
+			completed = true
+			pendingCompletion = pendingCompletion - 1
+			if pendingCompletion == 0 then
+				callback(results)
+			end
+		end)
+	end
+end
+
 return async

@@ -1,5 +1,16 @@
 local itertools = {}
 
+-- itertools.iterlist - list iterator
+function itertools.iterlist(list)
+  local n = 0
+  local c = #list
+  return function()
+    n = n + 1
+    if n > c then return end
+    return list[n]
+  end
+end
+
 -- itertools.zip - iterates over a set of lists in a zip like fashion
 function itertools.zip(a, ...)
 	if a == nil then return noop end
@@ -64,4 +75,13 @@ function itertools.list(func, iterable)
     n = n + 1
   end
   return list
+end
+
+
+-- itertools.any
+function itertools.any(iterable)
+  for val in iterable do
+    if val then return val end
+  end
+  return false
 end

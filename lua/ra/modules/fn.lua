@@ -124,5 +124,4 @@ function fn.const(a)
 	end
 end
 
-
 return fn
