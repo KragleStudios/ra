@@ -23,5 +23,7 @@ ra.ds      = ra.include_sh 'modules/datastructures.lua'
 ra.net     = ra.include_sh 'modules/net.lua'
 ra.kvo     = ra.include_sh 'modules/kvo.lua' -- depends on ra.fn
 ra.surface = ra.include_cl 'modules/surface.lua'
+ra.pon     = ra.include_sh 'modules/pon.lua'
+ra.algorithm = ra.include_sh 'modules/algorithm.lua'
 
 return ra

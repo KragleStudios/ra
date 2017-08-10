@@ -15,6 +15,27 @@ end
 util.min = min
 util.max = max
 
+function util.list_max(table)
+	local max = table[1]
+	for i = 2, #table do
+		if table[i] > max then
+			max = table[i]
+		end
+	end
+	return max
+end
+
+function util.list_min(table)
+	local min = table[1]
+	for i = 2, #table do
+		if table[i] < min then
+			min = table[i]
+		end
+	end
+	return min
+end
+
+
 function util.extend(tbl, values)
 	local newTbl = {}
 	for k,v in pairs(values) do

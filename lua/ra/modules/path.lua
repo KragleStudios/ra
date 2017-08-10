@@ -20,5 +20,16 @@ path.normalize = function(path)
 	return table.concat(stack, '/')
 end
 
+path.makeIntermediateDirectories = function(path)
+	local start = 1
+	while true do
+		local next = string.find(path, '/', start, true)
+		if not next then break end
+		local partial = string.sub(path, 1, next)
+		file.CreateDir(partial)
+		start = next + 1
+	end
+	file.CreateDir(path)
+end
 
 return path

@@ -77,7 +77,6 @@ function itertools.list(func, iterable)
   return list
 end
 
-
 -- itertools.any
 function itertools.any(iterable)
   for val in iterable do
